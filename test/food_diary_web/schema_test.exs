@@ -30,5 +30,65 @@ defmodule FoodDiaryWeb.SchemaTest do
 
       assert response == expected_response
     end
+
+    test "when the user does not exist, returns an error", %{conn: conn} do
+      query = """
+      {
+        user(id: "123456"){
+          name,
+          email
+        }
+      }
+      """
+
+      expected_response = %{
+        "data" => %{"user" => nil},
+        "errors" => [
+          %{
+            "locations" => [%{"column" => 3, "line" => 2}],
+            "message" => "User not found",
+            "path" => ["user"]
+          }
+        ]
+      }
+
+      response =
+        conn
+        |> post("api/graphql", %{query: query})
+        |> json_response(:ok)
+
+      assert response == expected_response
+    end
+  end
+
+  describe "users mutation" do
+    test "when all params are valid, creates the user", %{conn: conn} do
+      mutation = """
+        mutation {
+          createUser(input: {
+            email: "romulo@tomate.com", name: "Rômulo"
+          }){
+            id
+            name
+            email
+          }
+        }
+      """
+
+      response =
+        conn
+        |> post("api/graphql", %{query: mutation})
+        |> json_response(:ok)
+
+      assert %{
+               "data" => %{
+                 "createUser" => %{
+                   "email" => "romulo@tomate.com",
+                   "id" => _id,
+                   "name" => "Rômulo"
+                 }
+               }
+             } = response
+    end
   end
 end
